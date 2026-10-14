@@ -3,11 +3,13 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
 
+
 app = FastAPI(
     title="Library API",
     description="یک سیستم کتابداری ساده با FastAPI (داده‌ها در حافظه نگه‌داری می‌شوند)",
     version="1.0.0",
 )
+
 
 class BookCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200, examples=["شاهنامه"])
@@ -31,18 +33,19 @@ class Book(BaseModel):
     isbn: Optional[str] = None
     created_at: datetime
 
-books: List[Book] = []
+
+books: dict[int, Book] = {}
 next_id: int = 1
 
 
 def get_book_or_404(book_id: int) -> Book:
-    for book in books:
-        if book.id == book_id:
-            return book
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail=f"کتاب با شناسه {book_id} پیدا نشد",
-    )
+    book = books.get(book_id)
+    if book is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"کتاب با شناسه {book_id} پیدا نشد",
+        )
+    return book
 
 
 @app.get("/", tags=["Root"])
@@ -57,7 +60,7 @@ def root():
 @app.get("/books", response_model=List[Book], tags=["Books"])
 def get_books():
     """دریافت لیست تمام کتاب‌ها"""
-    return books
+    return list(books.values())
 
 
 @app.post(
@@ -77,7 +80,7 @@ def create_book(book_data: BookCreate):
         isbn=book_data.isbn,
         created_at=datetime.utcnow(),
     )
-    books.append(new_book)
+    books[next_id] = new_book
     next_id += 1
     return new_book
 
@@ -107,6 +110,6 @@ def update_book(book_id: int, book_data: BookUpdate):
 )
 def delete_book(book_id: int):
     """حذف یک کتاب خاص"""
-    book = get_book_or_404(book_id)
-    books.remove(book)
+    get_book_or_404(book_id)
+    del books[book_id]
     return None
