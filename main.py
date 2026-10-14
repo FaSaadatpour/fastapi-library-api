@@ -9,8 +9,6 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# -------------------- Models --------------------
-
 class BookCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200, examples=["شاهنامه"])
     author: str = Field(..., min_length=1, max_length=100, examples=["فردوسی"])
@@ -33,9 +31,6 @@ class Book(BaseModel):
     isbn: Optional[str] = None
     created_at: datetime
 
-
-# -------------------- In-memory storage --------------------
-
 books: List[Book] = []
 next_id: int = 1
 
@@ -49,8 +44,6 @@ def get_book_or_404(book_id: int) -> Book:
         detail=f"کتاب با شناسه {book_id} پیدا نشد",
     )
 
-
-# -------------------- Endpoints --------------------
 
 @app.get("/", tags=["Root"])
 def root():
